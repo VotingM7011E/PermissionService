@@ -2,3 +2,4 @@ flask
 python-jose 
 requests 
 cachetools
+python-keycloak
