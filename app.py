@@ -9,7 +9,7 @@ app = Flask(__name__)
 # Root health check (for Kubernetes)
 @app.get("/")
 def root():
-    return "MeetingService API running"
+    return "PermissionService API running"
 
 @app.route("/private")
 @keycloak_protect
