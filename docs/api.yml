@@ -1,0 +1,136 @@
+openapi: 3.1.1
+info:
+  title: PermissionService API
+  description: API for managing user roles 
+  version: 0.1.0
+
+servers:
+  - url: http://permission-service-dev.ltu-m7011e-2.se/
+
+paths:
+  /meetings/{meeting_id}/users/{username}/roles/:
+    post:
+      summary: Add a role to user for meeting.
+      parameters:
+      - name: meeting_id
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+      - name: username
+        in: path
+        required: true
+        schema:
+          type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AddRoleRequest"
+      responses:
+        "200":
+          description: Role successfully added.
+    get: 
+      summary: Get a users roles in meeting
+      parameters:
+      - name: meeting_id
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+      - name: username
+        in: path
+        required: true
+        schema:
+          type: string
+      responses:
+        "200":
+          description: List of roles
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Role"
+    put: 
+      summary: Replace a users roles in meeting
+      parameters:
+      - name: meeting_id
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+      - name: username
+        in: path
+        required: true
+        schema:
+          type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: array
+              items:
+                $ref: "#/components/schemas/Role"
+      responses:
+        "200":
+          description: Roles changed
+
+  /meetings/{meeting_id}/users/{username}/roles/{role}:
+    delete:
+      summary: Remove a role from user
+      parameters:
+      - name: meeting_id
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+      - name: username
+        in: path
+        required: true
+        schema:
+          type: string
+      - name: role
+        in: path
+        required: true
+        schema:
+          $ref: "#/components/schemas/Role"
+      responses:
+        "200":
+          description: Delete successful
+
+components:
+  schemas:
+    AddRoleRequest:
+      type: object
+      required:
+        - role
+      properties:
+        role:
+          $ref: "#/components/schemas/Role"
+      example:
+        role: "manage"
+
+    Role:
+      type: string
+      description: A role assigned to a user for a specific meeting.
+      example: "vote"
+      enum: [ "view", "vote", "manage" ]
+
+    UserRolesResponse:
+      type: object
+      properties:
+        roles:
+          type: array
+          items:
+            $ref: "#/components/schemas/Role"
+      example:
+        roles:
+          - "moderator"
+          - "participant"
