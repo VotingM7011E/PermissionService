@@ -64,7 +64,7 @@ def get_user_id(username):
 def get_current_meeting_roles(meeting_id, user_id):
     """Return only roles belonging to this meeting (filter by prefix)."""
     prefix = f"z-{meeting_id}-"
-    all_roles = keycloak_admin.get_user_realm_roles(user_id=user_id)
+    all_roles = keycloak_admin.get_realm_roles_of_user(user_id=user_id)
     return [r for r in all_roles if r["name"].startswith(prefix)]
 
 # --- Routes -----------------------------------------------------------------
