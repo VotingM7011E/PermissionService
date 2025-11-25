@@ -23,7 +23,7 @@ VALID_ROLES = {"view", "vote", "manage"}
 
 def validate_uuid(id_str):
     try:
-        UUID(id_str)
+        uuid.UUID(id_str)
     except Exception:
         abort(400, description=f"Invalid UUID: {id_str}")
 
