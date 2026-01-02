@@ -1,5 +1,5 @@
 from flask import Flask, request, jsonify
-from keycloak_auth import keycloak_protect
+from keycloak_auth import keycloak_protect, check_role
 from keycloak import KeycloakAdmin
 import os
 import uuid
@@ -70,9 +70,17 @@ def get_current_meeting_roles(meeting_id, user_id):
 # --- Routes -----------------------------------------------------------------
 
 @app.post("/meetings/<meeting_id>/users/<username>/roles/")
+@keycloak_protect
 def add_role(meeting_id, username):
     # Validate path parameters
     validate_uuid(meeting_id)
+    user_id = request.user.preferred_username
+    if not user_id: 
+        return jsonify({"error": "Unauthorized'"}), 401
+
+    if not check_role(request.user, meeting_id, "manage"):
+        return jsonify({"error": "Forbidden"}), 403
+
     validate_username(username)
 
     # Validate request body
@@ -110,8 +118,16 @@ def get_roles(meeting_id, username):
 
 
 @app.put("/meetings/<meeting_id>/users/<username>/roles/")
+@keycloak_protect
 def replace_roles(meeting_id, username):
     validate_uuid(meeting_id)
+    user_id = request.user.preferred_username
+    if not user_id: 
+        return jsonify({"error": "Unauthorized'"}), 401
+
+    if not check_role(request.user, meeting_id, "manage"):
+        return jsonify({"error": "Forbidden"}), 403
+
     validate_username(username)
 
     data = request.get_json()
@@ -137,8 +153,16 @@ def replace_roles(meeting_id, username):
 
 
 @app.delete("/meetings/<meeting_id>/users/<username>/roles/<role>")
+@keycloak_protect
 def delete_role(meeting_id, username, role):
     validate_uuid(meeting_id)
+    user_id = request.user.preferred_username
+    if not user_id: 
+        return jsonify({"error": "Unauthorized'"}), 401
+
+    if not check_role(request.user, meeting_id, "manage"):
+        return jsonify({"error": "Forbidden"}), 403
+
     validate_username(username)
     validate_role(role)
 
