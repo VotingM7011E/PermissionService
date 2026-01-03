@@ -25,17 +25,17 @@ def validate_uuid(id_str):
     try:
         uuid.UUID(id_str)
     except Exception:
-        abort(400, description=f"Invalid UUID: {id_str}")
+        raise ValueError(f"Invalid UUID: {id_str}")
 
 
 def validate_username(username):
     if not isinstance(username, str) or len(username.strip()) == 0:
-        abort(400, description="Invalid username")
+        raise ValueError(f"Invalid username: {username}")
 
 
 def validate_role(role):
     if role not in VALID_ROLES:
-        abort(400, description=f"Invalid role: {role}. Must be one of {VALID_ROLES}")
+        raise ValueError(f"Invalid role: {role}. Must be one of {VALID_ROLES}")
 
 # ----------------------------- Keycloak Helpers ------------------------------
 
@@ -58,7 +58,7 @@ def ensure_role_exists(meeting_id, role):
 def get_user_id(username):
     users = keycloak_admin.get_users(query={"username": username})
     if not users:
-        abort(404, description=f"User '{username}' not found")
+        raise RuntimeError(f"User '{username}' not found")
     return users[0]["id"]
 
 def get_current_meeting_roles(meeting_id, user_id):
@@ -66,6 +66,20 @@ def get_current_meeting_roles(meeting_id, user_id):
     prefix = f"z-{meeting_id}-"
     all_roles = keycloak_admin.get_realm_roles_of_user(user_id=user_id)
     return [r for r in all_roles if r["name"].startswith(prefix)]
+
+# --- Internal logic -----------------------------------------------------------------
+
+def add_role_to_user(meeting_id, username, role):
+    validate_uuid(meeting_id)
+    validate_username(username)
+    validate_role(role)
+
+    user_id = get_user_id(username)
+    
+    role_rep = ensure_role_exists(meeting_id, role)
+
+    # Assign role
+    keycloak_admin.assign_realm_roles(user_id=user_id, roles=[role_rep])
 
 # --- Routes -----------------------------------------------------------------
 
@@ -88,19 +102,9 @@ def add_role(meeting_id, username):
     if not data or "role" not in data:
         abort(400, description="Missing 'role' in request body")
 
-    role = data["role"]
-    validate_role(role)
-
-    user_id = get_user_id(username)
-
-    # Ensure role exists
-    role_rep = ensure_role_exists(meeting_id, role)
-
-    # Assign role
-    keycloak_admin.assign_realm_roles(user_id=user_id, roles=[role_rep])
+    add_role_to_user(meeting_id, username, role)
 
     return jsonify({"message": "Role successfully added"}), 200
-
 
 @app.get("/meetings/<meeting_id>/users/<username>/roles/")
 def get_roles(meeting_id, username):
@@ -180,7 +184,34 @@ def delete_role(meeting_id, username, role):
 
     return jsonify({"message": "Delete successful"}), 200
 
+# --- Inter-service -----------------
 
+def on_event(event: dict):
+    # event envelope: {event_type, data, ...}
+    et = event.get("event_type")
+    data = event.get("data", {})
+
+    if et == "permission.create_meeting":
+        # {
+        #    meeting_id: uuid
+        #    creator_username: username
+        # }
+        if not data:
+            raise Exception("Missing data")
+        if "meeting_id" not in data:
+            raise Exception("Missing meeting_id in data")
+        if "creator_username" not in data:
+            raise Exception("Missing creator_username in data")
+        
+        add_role_to_user(data.meeting_id, data.creator_username, "view")
+        add_role_to_user(data.meeting_id, data.creator_username, "manage")
+
+# Start consumer thread (after app exists)
+start_consumer(
+    queue=os.getenv("MQ_QUEUE", "permission-service"),
+    bindings=os.getenv("MQ_BINDINGS", "permission.create_meeting").split(","),
+    on_event=on_event,
+)
 
 # Root health check (for Kubernetes)
 @app.get("/")
