@@ -1,6 +1,7 @@
 from flask import Flask, request, jsonify
 from keycloak_auth import keycloak_protect, check_role
 from keycloak import KeycloakAdmin
+from mq import start_consumer
 import os
 import uuid
 import random
