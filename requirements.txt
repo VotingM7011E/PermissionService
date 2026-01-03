@@ -3,3 +3,4 @@ python-jose
 requests 
 cachetools
 python-keycloak
+pika
