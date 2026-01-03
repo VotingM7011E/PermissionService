@@ -204,8 +204,8 @@ def on_event(event: dict):
         if "creator_username" not in data:
             raise Exception("Missing creator_username in data")
         
-        add_role_to_user(data.meeting_id, data.creator_username, "view")
-        add_role_to_user(data.meeting_id, data.creator_username, "manage")
+        add_role_to_user(data["meeting_id"], data["creator_username"], "view")
+        add_role_to_user(data["meeting_id"], data["creator_username"], "manage")
 
 # Start consumer thread (after app exists)
 start_consumer(
