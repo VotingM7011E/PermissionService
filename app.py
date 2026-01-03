@@ -218,18 +218,5 @@ start_consumer(
 def root():
     return "PermissionService API running"
 
-@app.route("/private")
-@keycloak_protect
-def private():
-    return jsonify({
-        "message": "Protected route",
-        "user": request.user
-    })
-
-@app.route("/public")
-def public():
-    return {"message": "Public route"}
-
-
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=80)
