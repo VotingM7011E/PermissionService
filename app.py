@@ -89,7 +89,7 @@ def add_role_to_user(meeting_id, username, role):
 def add_role(meeting_id, username):
     # Validate path parameters
     validate_uuid(meeting_id)
-    user_id = request.user.preferred_username
+    user_id = request.user["preferred_username"]
     if not user_id: 
         return jsonify({"error": "Unauthorized'"}), 401
 
@@ -126,7 +126,7 @@ def get_roles(meeting_id, username):
 @keycloak_protect
 def replace_roles(meeting_id, username):
     validate_uuid(meeting_id)
-    user_id = request.user.preferred_username
+    user_id = request.user["preferred_username"]
     if not user_id: 
         return jsonify({"error": "Unauthorized'"}), 401
 
@@ -161,7 +161,7 @@ def replace_roles(meeting_id, username):
 @keycloak_protect
 def delete_role(meeting_id, username, role):
     validate_uuid(meeting_id)
-    user_id = request.user.preferred_username
+    user_id = request.user["preferred_username"]
     if not user_id: 
         return jsonify({"error": "Unauthorized'"}), 401
 
