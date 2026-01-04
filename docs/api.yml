@@ -104,7 +104,52 @@ paths:
       responses:
         "200":
           description: Delete successful
-
+  /meetings/{meeting_id}/roles/{role}/users:
+    get:
+      summary: Get all users with role
+      security:
+        - bearerAuth: []
+      parameters:
+      - name: meeting_id
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+      - name: role
+        in: path
+        required: true
+        schema:
+          $ref: "#/components/schemas/Role"
+      responses: 
+        "200": 
+          description: Successfully retrieved users
+          content:
+            application/json:
+              schema:
+                type:  array
+                items: 
+                  type: string
+                  description: Username
+                example: ["johndoe", "janedoe", "admin"]
+        "400":
+          description:  Invalid UUID or role
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "401":
+          description:  Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "403":
+          description: Forbidden
+          content:
+            application/json: 
+              schema:
+                $ref: "#/components/schemas/Error"
 components:
   schemas:
     AddRoleRequest:
@@ -134,3 +179,14 @@ components:
         roles:
           - "moderator"
           - "participant"
+    Error: 
+      type: object
+      description: Error response
+      properties: 
+        error:
+          type: string
+          description: Error message
+      required:
+        - error
+      example:
+        error: "User not found"

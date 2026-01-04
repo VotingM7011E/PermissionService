@@ -185,6 +185,38 @@ def delete_role(meeting_id, username, role):
 
     return jsonify({"message": "Delete successful"}), 200
 
+@app.get("/meetings/<meeting_id>/roles/<role>/users")
+@keycloak_protect
+def get_users_with_role(meeting_id, role):
+    """
+    GET /meetings/{meeting_id}/roles/{role}/users
+    Get all users with a specific role in a meeting. 
+    """
+    validate_uuid(meeting_id)
+    validate_role(role)
+
+    user_id = request.user. get("preferred_username")
+    if not user_id:
+        return jsonify({"error":  "Unauthorized"}), 401
+
+    # Only users with view permission or higher can see role assignments
+    if not check_role(request.user, meeting_id, "view"):
+        return jsonify({"error": "Forbidden"}), 403
+
+    rname = role_name(meeting_id, role)
+
+    try:
+        # Get all users assigned to this role
+        role_users = keycloak_admin.get_realm_role_members(rname)
+    except Exception: 
+        # Role doesn't exist, return empty list
+        return jsonify([]), 200
+
+    # Extract usernames from the user representations
+    usernames = [user.get("username") for user in role_users if user.get("username")]
+
+    return jsonify(usernames), 200
+
 # --- Inter-service -----------------
 
 def on_event(event: dict):
